@@ -2,26 +2,18 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-# -------------------------
+
 # Helper to extract JS cookie
-# -------------------------
 def extract_cookie_from_script(html_content):
-    """
-    Extract the cookie name and value from the NLB setCookie JS function.
-    """
     pattern = r"setCookie\(['\"]([^'\"]+)['\"],['\"]([^'\"]+)['\"],\d+\)"
     match = re.search(pattern, html_content)
     if match:
         return match.group(1), match.group(2)
     return None, None
 
-# -------------------------
+
 # Create a session with cookie
-# -------------------------
 def get_nlb_session():
-    """
-    Returns a requests.Session() with the NLB cookie set.
-    """
     url = "https://www.nlb.lk/lotteries"
     session = requests.Session()
     try:
@@ -34,11 +26,8 @@ def get_nlb_session():
         print("Failed to set up session:", e)
         return session
 
-# -------------------------
-# Scraper for a single draw
-# -------------------------
-def scrape_draw(draw_id: int):
-    url = f"https://www.nlb.lk/results/nlb-jaya/{draw_id}"
+def scrape_draw(draw_id: int, lottery_name: str):
+    url = f"https://www.nlb.lk/results/{lottery_name}/{draw_id}"
     session = get_nlb_session()
     headers = {"User-Agent": "Mozilla/5.0"}
 
@@ -50,9 +39,7 @@ def scrape_draw(draw_id: int):
         session.close()
         raise Exception("Result block not found")
 
-    # ---------------------
-    # Draw number (from <h1>)
-    # ---------------------
+    # Draw number
     draw_no = None
     h1_tag = draw_block.find('h1')
     if h1_tag:
@@ -61,9 +48,7 @@ def scrape_draw(draw_id: int):
         if draw_no_match:
             draw_no = draw_no_match.group(1)
 
-    # ---------------------
-    # Date (from <p><b>Date:</b>)
-    # ---------------------
+    # Date
     date = None
     date_tag = None
     for p in draw_block.find_all('p'):
@@ -75,9 +60,7 @@ def scrape_draw(draw_id: int):
         date_text = date_tag.get_text(strip=True)
         date = date_text.replace('Date:', '').replace('"', '').strip()
 
-    # ---------------------
     # Numbers & letter
-    # ---------------------
     numbers = []
     letter = None
     number_tags = draw_block.select('ol.B li')
@@ -89,30 +72,22 @@ def scrape_draw(draw_id: int):
         elif text.isdigit():
             numbers.append(text)
 
-    # ---------------------
-    # Prize structure (FIXED PROPERLY)
-    # ---------------------
+    # Prize structure
     prize_structure = []
     prize_table = soup.find("div", class_="tStruct")
-
     if prize_table:
         body = prize_table.find_all("div", recursive=False)[1]
         rows = body.find_all("div", recursive=False)
-
         for row in rows:
             cols = row.find_all("div", recursive=False)
-
             if len(cols) < 3:
                 continue
 
             rank = cols[0].get_text(strip=True)
-
             pattern_tag = cols[1].find("span")
             pattern = pattern_tag.get_text(strip=True) if pattern_tag else ""
-
             prize = cols[2].get_text(strip=True)
 
-            # Super Prize row (no winners column)
             if len(cols) == 4:
                 winners = "0"
                 total = cols[3].get_text(strip=True)
@@ -128,32 +103,13 @@ def scrape_draw(draw_id: int):
                 "total": total
             })
 
-
-
     session.close()
+
     return {
+        "lottery_name": lottery_name,
         "draw_no": draw_no,
         "date": date,
         "letter": letter,
         "numbers": numbers,
         "prize_structure": prize_structure
     }
-
-# -------------------------
-# Example usage
-# -------------------------
-if __name__ == "__main__":
-    try:
-        draw_id = 365
-        draw_data = scrape_draw(draw_id)
-
-        print(f"NLB Jaya Draw {draw_data['draw_no']} ({draw_data['date']}):")
-        print(f"Letter: {draw_data['letter']}")
-        print(f"Numbers: {', '.join(draw_data['numbers'])}")
-
-        print("\nPrize Structure:")
-        for p in draw_data["prize_structure"]:
-            print(p)
-
-    except Exception as e:
-        print("Error:", e)
