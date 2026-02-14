@@ -8,8 +8,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Your Supabase/Postgres URI
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # load env variables from .env
+
 connection_uri = os.getenv("CONNECTION_URI")
+if not connection_uri:
+    raise RuntimeError("CONNECTION_URI environment variable not set")
+
+engine = create_engine(connection_uri)
+
+# Supabase/Postgres URI
+# connection_uri = "postgresql://postgres.lfvkuwndmclctaapoerl:srXX5lhAusz4i1Ow@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres"
 
 engine = create_engine(connection_uri)
 metadata = MetaData()

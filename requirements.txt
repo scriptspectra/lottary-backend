@@ -6,3 +6,4 @@ psycopg2-binary
 sqlmodel
 sqlalchemy 
 apscheduler
+python-dotenv
