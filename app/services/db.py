@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import create_engine, Table, Column, Integer, String, JSON, MetaData, func
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.exc import IntegrityError
@@ -8,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Your Supabase/Postgres URI
-connection_uri = "postgresql://postgres.lfvkuwndmclctaapoerl:srXX5lhAusz4i1Ow@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres"
+connection_uri = os.getenv("CONNECTION_URI")
 
 engine = create_engine(connection_uri)
 metadata = MetaData()
