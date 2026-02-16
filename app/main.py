@@ -13,9 +13,8 @@ app.include_router(mahajana_router)
 
 @app.on_event("startup")
 def startup_event():
-    # Prevent double scheduler in reload mode
-    if os.environ.get("RUN_MAIN") == "true":
-        app_scheduler.start_scheduler()
+    # Start scheduler on application startup
+    app_scheduler.start_scheduler()
 
 
 @app.on_event("shutdown")

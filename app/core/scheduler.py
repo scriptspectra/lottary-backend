@@ -57,10 +57,10 @@ def start_scheduler():
         if not scheduler.get_job('mahajana_scrape'):
             scheduler.add_job(
                 scheduled_scrape,
-                'interval',
-                hours=24,
+                'cron',
+                hour=22,
+                minute=0,
                 id='mahajana_scrape',
-                next_run_time=dt.utcnow(),
             )
 
         if not scheduler.running:
