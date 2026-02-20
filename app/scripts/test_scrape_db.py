@@ -2,7 +2,7 @@ from app.services.mahajana_scraper import scrape_draw
 from app.services.db import insert_draw, get_max_draw_no
 
 LOTTERY_NAME = "mahajana-sampatha"   # change if needed
-DRAW_ID = 6098                       # use a real upcoming draw number
+DRAW_ID = 6099                       # use a real upcoming draw number
 
 print("Max draw in DB BEFORE:", get_max_draw_no())
 
