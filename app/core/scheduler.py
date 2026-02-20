@@ -1,12 +1,16 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 from datetime import datetime as dt
+from zoneinfo import ZoneInfo
 
 from app.services.mahajana_scraper import scrape_draw
 from app.services import db as db_service
 from app.services.db import insert_draw
 
 logger = logging.getLogger(__name__)
+
+# Sri Lanka timezone (UTC+5:30)
+SL_TZ = ZoneInfo("Asia/Colombo")
 
 last_draw_id = 6097
 
@@ -60,6 +64,7 @@ def start_scheduler():
                 'cron',
                 hour=22,
                 minute=0,
+                timezone=SL_TZ,
                 id='mahajana_scrape',
             )
 
