@@ -1,22 +1,43 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.routers.mahajana_sampatha import router as mahajana_router
 import logging
-import os
 
-from app.core import scheduler as app_scheduler
+from app.core.scheduler import start_scheduler, shutdown_scheduler
+from app.services.db import init_db
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = FastAPI(title="NLB Lottery API")
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """Startup and shutdown lifecycle for the FastAPI app."""
+    # ── Startup ──
+    try:
+        init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize database: %s", e)
+
+    start_scheduler()
+    logger.info("Scheduler started")
+
+    yield  # app is running
+
+    # ── Shutdown ──
+    shutdown_scheduler()
+
+
+app = FastAPI(title="NLB Lottery API", lifespan=lifespan)
+
+
+# ── Routers ──
+from app.routers.mahajana_sampatha import router as mahajana_router  # noqa: E402
+
 app.include_router(mahajana_router)
 
 
-@app.on_event("startup")
-def startup_event():
-    # Start scheduler on application startup
-    app_scheduler.start_scheduler()
-
-
-@app.on_event("shutdown")
-def shutdown_event():
-    app_scheduler.shutdown_scheduler()
+@app.get("/", tags=["health"])
+def health_check():
+    """Simple health-check endpoint."""
+    return {"status": "ok", "service": "NLB Lottery API"}
