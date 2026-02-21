@@ -1,13 +1,19 @@
 import logging
+<<<<<<< HEAD
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
+=======
+from datetime import datetime as dt
+from zoneinfo import ZoneInfo
+>>>>>>> 75dc3d9c1327ef4821d6dc1d855ebdacd668c2ac
 
 from app.services.mahajana_scraper import scrape_draw
 from app.services.db import insert_draw, get_max_draw_no
 
 logger = logging.getLogger(__name__)
 
+<<<<<<< HEAD
 # Fallback draw ID if the database is empty
 _FALLBACK_LAST_DRAW_ID = 6099
 
@@ -15,6 +21,12 @@ _FALLBACK_LAST_DRAW_ID = 6099
 SL_TZ = ZoneInfo("Asia/Colombo")
 
 scheduler = BackgroundScheduler(timezone=SL_TZ)
+=======
+# Sri Lanka timezone (UTC+5:30)
+SL_TZ = ZoneInfo("Asia/Colombo")
+
+last_draw_id = 6097
+>>>>>>> 75dc3d9c1327ef4821d6dc1d855ebdacd668c2ac
 
 
 def scheduled_scrape():
@@ -58,7 +70,12 @@ def start_scheduler():
                 "cron",
                 hour=22,
                 minute=0,
+<<<<<<< HEAD
                 id="mahajana_scrape",
+=======
+                timezone=SL_TZ,
+                id='mahajana_scrape',
+>>>>>>> 75dc3d9c1327ef4821d6dc1d855ebdacd668c2ac
             )
 
         if not scheduler.running:
