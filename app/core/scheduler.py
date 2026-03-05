@@ -1,64 +1,63 @@
 import logging
-<<<<<<< HEAD
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
-=======
-from datetime import datetime as dt
-from zoneinfo import ZoneInfo
->>>>>>> 75dc3d9c1327ef4821d6dc1d855ebdacd668c2ac
 
 from app.services.mahajana_scraper import scrape_draw
 from app.services.db import insert_draw, get_max_draw_no
 
 logger = logging.getLogger(__name__)
 
-<<<<<<< HEAD
-# Fallback draw ID if the database is empty
-_FALLBACK_LAST_DRAW_ID = 6099
+# configure lotteries and fallback as in run_scrape
+LOTTERIES = [
+    "mahajana-sampatha",
+    "zand",
+]
+
+# fallback draw id for new lotteries
+FALLBACK_LAST_DRAW_ID = 6099
 
 # Sri Lanka timezone (UTC+5:30)
 SL_TZ = ZoneInfo("Asia/Colombo")
 
 scheduler = BackgroundScheduler(timezone=SL_TZ)
-=======
-# Sri Lanka timezone (UTC+5:30)
-SL_TZ = ZoneInfo("Asia/Colombo")
-
-last_draw_id = 6097
->>>>>>> 75dc3d9c1327ef4821d6dc1d855ebdacd668c2ac
 
 
 def scheduled_scrape():
+    """Run one scrape for each configured lottery.
+
+    The original version targeted only Mahajana Sampatha; now every lottery in
+    `LOTTERIES` will be advanced independently.  The fallback draw ID ensures
+    we start from a reasonable number on a fresh database.
     """
-    Scrape the next Mahajana Sampatha draw.
 
-    Queries Supabase for the latest draw_no, increments by 1,
-    scrapes that draw, and saves it back to the database.
-    """
-    lottery_name = "mahajana-sampatha"
+    for lottery_name in LOTTERIES:
+        try:
+            max_db = get_max_draw_no(lottery_name)
+            next_id = (max_db + 1) if max_db is not None else (FALLBACK_LAST_DRAW_ID + 1)
 
-    try:
-        max_db = get_max_draw_no(lottery_name)
-        next_id = (max_db + 1) if max_db is not None else (_FALLBACK_LAST_DRAW_ID + 1)
+            logger.info("[%s] Attempting to scrape draw %s", lottery_name, next_id)
 
-        logger.info("Attempting to scrape draw %s for %s", next_id, lottery_name)
+            data = scrape_draw(next_id, lottery_name)
 
-        data = scrape_draw(next_id, lottery_name)
+            if data is None:
+                logger.info("[%s] Draw %s not available yet", lottery_name, next_id)
+                continue
 
-        if data is None:
-            logger.info("Draw %s not available yet", next_id)
-            return
+            if not data.get("draw_no") or not data.get("numbers"):
+                logger.warning(
+                    "[%s] Incomplete data for draw %s, skipping: %s",
+                    lottery_name,
+                    next_id,
+                    data,
+                )
+                continue
 
-        if not data.get("draw_no") or not data.get("numbers"):
-            logger.warning("Incomplete data for draw %s, skipping: %s", next_id, data)
-            return
+            insert_draw(data)
+            logger.info("[%s] Scraped and inserted draw %s", lottery_name, data.get("draw_no"))
 
-        insert_draw(data)
-        logger.info("Scraped and inserted draw %s", data.get("draw_no"))
-
-    except Exception:
-        logger.exception("scheduled_scrape failed")
+        except Exception:
+            logger.exception("scheduled_scrape failed for %s", lottery_name)
 
 
 def start_scheduler():
@@ -70,12 +69,8 @@ def start_scheduler():
                 "cron",
                 hour=22,
                 minute=0,
-<<<<<<< HEAD
-                id="mahajana_scrape",
-=======
                 timezone=SL_TZ,
                 id='mahajana_scrape',
->>>>>>> 75dc3d9c1327ef4821d6dc1d855ebdacd668c2ac
             )
 
         if not scheduler.running:
@@ -87,7 +82,7 @@ def start_scheduler():
 
 
 def shutdown_scheduler():
-    """Gracefully stop the background scheduler."""
+    """Stop the background scheduler."""
     try:
         if scheduler.running:
             scheduler.shutdown()

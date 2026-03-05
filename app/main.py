@@ -8,11 +8,10 @@ from app.services.db import init_db
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     """Startup and shutdown lifecycle for the FastAPI app."""
-    # ── Startup ──
+    # Startup 
     try:
         init_db()
         logger.info("Database initialized successfully")
@@ -24,7 +23,7 @@ async def lifespan(application: FastAPI):
 
     yield  # app is running
 
-    # ── Shutdown ──
+    # Shutdown
     shutdown_scheduler()
 
 
@@ -41,3 +40,4 @@ app.include_router(mahajana_router)
 def health_check():
     """Simple health-check endpoint."""
     return {"status": "ok", "service": "NLB Lottery API"}
+

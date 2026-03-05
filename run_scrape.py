@@ -18,26 +18,53 @@ from app.services.mahajana_scraper import scrape_draw
 logger = logging.getLogger(__name__)
 
 
+# define the lotteries we care about and a default starting draw number
+# the fallback value will be used for any lottery that has no records yet
+LOTTERIES = [
+    "mahajana-sampatha",
+    "zand",              # add new lottery slugs here
+    # "another-lottery",
+]
+FALLBACK_DRAW_NO = 6100
+
+
 def main():
-    lottery_name = "mahajana-sampatha"
+    """Loop through all configured lotteries and attempt one scrape each.
 
-    max_db = get_max_draw_no(lottery_name)
-    next_id = (max_db + 1) if max_db is not None else 6100
+    The script figures out the next draw ID by querying the database for the
+    highest draw number we already have.  If the table is empty for a
+    lottery, `FALLBACK_DRAW_NO` is used so we don't start at zero.
+    """
 
-    logger.info("Latest draw in DB: %s — scraping draw %s", max_db, next_id)
+    for lottery_name in LOTTERIES:
+        max_db = get_max_draw_no(lottery_name)
+        next_id = (max_db + 1) if max_db is not None else FALLBACK_DRAW_NO
 
-    data = scrape_draw(next_id, lottery_name)
+        logger.info(
+            "[%s] Latest draw in DB: %s — scraping draw %s",
+            lottery_name,
+            max_db,
+            next_id,
+        )
 
-    if data is None:
-        logger.info("Draw %s not available yet", next_id)
-        return
+        data = scrape_draw(next_id, lottery_name)
 
-    if not data.get("draw_no") or not data.get("numbers"):
-        logger.warning("Incomplete data for draw %s: %s", next_id, data)
-        return
+        if data is None:
+            logger.info("[%s] Draw %s not available yet", lottery_name, next_id)
+            # try the next lottery rather than exiting completely
+            continue
 
-    insert_draw(data)
-    logger.info("Done — inserted draw %s", data.get("draw_no"))
+        if not data.get("draw_no") or not data.get("numbers"):
+            logger.warning(
+                "[%s] Incomplete data for draw %s: %s",
+                lottery_name,
+                next_id,
+                data,
+            )
+            continue
+
+        insert_draw(data)
+        logger.info("[%s] Done — inserted draw %s", lottery_name, data.get("draw_no"))
 
 
 if __name__ == "__main__":
