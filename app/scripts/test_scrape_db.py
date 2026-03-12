@@ -5,7 +5,10 @@ from app.services.db import insert_draw, get_max_draw_no
 # NLB site.
 LOTTERIES = [
     ("mahajana-sampatha", 6099),
-    ("zand", 1000),  # example fallback / existing draw id
+    ("dhana-nidhanaya", 2161),  
+    ("govisetha", 4373),
+    ("mega-power", 2479),
+    ("nlb-jaya", 399),
 ]
 
 for lottery_name, draw_id in LOTTERIES:
