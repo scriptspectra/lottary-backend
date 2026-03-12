@@ -22,8 +22,10 @@ logger = logging.getLogger(__name__)
 # the fallback value will be used for any lottery that has no records yet
 LOTTERIES = [
     "mahajana-sampatha",
-    "zand",              # add new lottery slugs here
-    # "another-lottery",
+    "dhana-nidhanaya",             
+    "govisetha",
+    "mega-power",
+    "nlb-jaya",
 ]
 FALLBACK_DRAW_NO = 6100
 
