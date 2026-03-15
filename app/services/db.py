@@ -11,7 +11,7 @@ from sqlalchemy.sql import select
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-# ── Database connection ──
+# Database connection 
 connection_uri = os.getenv("CONNECTION_URI")
 if not connection_uri:
     raise RuntimeError("CONNECTION_URI environment variable not set")
@@ -19,7 +19,7 @@ if not connection_uri:
 engine = create_engine(connection_uri)
 metadata = MetaData()
 
-# ── Table definition ──
+# Table definition 
 jaya_draws = Table(
     "jaya_draws",
     metadata,
