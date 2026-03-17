@@ -9,6 +9,7 @@ affected by dyno restarts or cold boots.
 """
 
 import logging
+from app.services.db import delete_old_draws
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,11 +22,14 @@ logger = logging.getLogger(__name__)
 # define the lotteries we care about and a default starting draw number
 # the fallback value will be used for any lottery that has no records yet
 LOTTERIES = [
-    "mahajana-sampatha",
-    "zand",              # add new lottery slugs here
-    # "another-lottery",
+    ("mahajana-sampatha", 6099),
+    ("dhana-nidhanaya", 2161),
+    ("govisetha", 4373),
+    ("mega-power", 2479),
+    ("nlb-jaya", 399),
 ]
-FALLBACK_DRAW_NO = 6100
+
+# FALLBACK_DRAW_NO = 6100
 
 
 def main():
@@ -35,10 +39,11 @@ def main():
     highest draw number we already have.  If the table is empty for a
     lottery, `FALLBACK_DRAW_NO` is used so we don't start at zero.
     """
+    delete_old_draws()
 
-    for lottery_name in LOTTERIES:
+    for lottery_name, fallback_draw in LOTTERIES:
         max_db = get_max_draw_no(lottery_name)
-        next_id = (max_db + 1) if max_db is not None else FALLBACK_DRAW_NO
+        next_id = (max_db + 1) if max_db is not None else fallback_draw
 
         logger.info(
             "[%s] Latest draw in DB: %s — scraping draw %s",

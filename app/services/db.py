@@ -1,12 +1,13 @@
 import os
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, func
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, PrimaryKeyConstraint, Date, DateTime, func
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
+from sqlmodel import Session
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -23,18 +24,24 @@ metadata = MetaData()
 jaya_draws = Table(
     "jaya_draws",
     metadata,
-    Column("lottery_name", String, primary_key=False),
-    Column("draw_no", Integer, primary_key=True),
-    Column("date", String, nullable=False),
+    Column("lottery_name", String, nullable=False),
+    Column("draw_no", Integer, nullable=False),
+    Column("date", Date, nullable=False),  # <-- changed to Date
     Column("letter", String, nullable=False),
     Column("numbers", PG_ARRAY(Integer), nullable=False),
-    Column("created_at", String, default=lambda: str(datetime.now(timezone.utc))),
+    Column("created_at", DateTime, default=datetime.utcnow),  # keep as DateTime
+    PrimaryKeyConstraint("lottery_name", "draw_no", name="jaya_draws_pk")
 )
 
 
 def init_db():
     """Create the tables defined in metadata if they don't exist."""
     metadata.create_all(engine)
+
+
+def get_session():
+    """Dependency generator for SQLModel sessions."""
+    return Session(engine)
 
 
 def insert_draw(draw_data: dict):
@@ -53,7 +60,10 @@ def insert_draw(draw_data: dict):
     with engine.begin() as conn:
         # Check for duplicates
         existing = conn.execute(
-            select(jaya_draws.c.draw_no).where(jaya_draws.c.draw_no == draw_no_int)
+            select(jaya_draws.c.draw_no).where(
+                (jaya_draws.c.draw_no == draw_no_int) &
+                (jaya_draws.c.lottery_name == draw_data.get("lottery_name"))
+            )
         )
         if existing.first():
             logger.info("Draw %s already exists, skipping", draw_no_int)
@@ -67,13 +77,21 @@ def insert_draw(draw_data: dict):
             logger.warning("Skipping insert: invalid numbers for draw %s", draw_no_int)
             return
 
+        # Parse date string from scraping, e.g., "Thursday March 12, 2026"
+        date_str = draw_data.get("date") or ""
+        try:
+            parsed_date = datetime.strptime(date_str, "%A %B %d, %Y").date()
+        except Exception:
+            logger.warning("Invalid date format: %s", date_str)
+            return
+
         stmt = jaya_draws.insert().values(
             lottery_name=draw_data.get("lottery_name") or "unknown",
             draw_no=draw_no_int,
-            date=draw_data.get("date") or "",
+            date=parsed_date,  # <-- store as Date
             letter=draw_data.get("letter") or "",
             numbers=numbers,
-            created_at=str(datetime.now(timezone.utc)),
+            created_at=datetime.utcnow(),
         )
 
         try:
@@ -97,3 +115,19 @@ def get_max_draw_no(lottery_name: str) -> int | None:
         except Exception:
             logger.exception("Failed to get max draw_no for %s", lottery_name)
             return None
+
+def delete_old_draws(months: int = 6):
+    """Delete draws older than `months` months."""
+    from datetime import datetime, timedelta
+    from sqlalchemy import delete
+
+    cutoff_date = datetime.utcnow().date() - timedelta(days=30*months)
+
+    with engine.begin() as conn:
+        stmt = delete(jaya_draws).where(jaya_draws.c.date < cutoff_date)
+        result = conn.execute(stmt)
+        print(f"Deleted {result.rowcount} old rows.")
+
+if __name__ == '__main__':
+    init_db()
+    print("Tables created.")
