@@ -39,7 +39,7 @@ def process_new_draw(payload: dict):
     with get_session() as session:
         try:
             query = text("""
-                SELECT id, user_id, scanned_numbers, scanned_letter, scanned_special 
+                SELECT id, user_id, scanned_numbers, scanned_letter, scanned_special_component
                 FROM public.tickets 
                 WHERE lottery_type = :lottery 
                   AND draw_number = :draw_no 
@@ -49,7 +49,7 @@ def process_new_draw(payload: dict):
             logger.info(f"Found {len(tickets)} pending tickets for {lottery_name} draw {draw_no}")
 
             for ticket in tickets:
-                ticket_id, user_id, scanned_nums, scanned_letter, scanned_special = ticket
+                ticket_id, user_id, scanned_nums, scanned_letter, scanned_special_component = ticket
                 t_nums = scanned_nums if isinstance(scanned_nums, list) else []
 
                 # Check ticket using generic function
@@ -59,7 +59,7 @@ def process_new_draw(payload: dict):
                     draw_numbers=draw_numbers,
                     draw_letter=draw_letter,
                     prize_tiers=prize_tiers,
-                    ticket_special_component=scanned_special,
+                    ticket_special_component=scanned_special_component,
                     special_component=draw_special
                 )
 
