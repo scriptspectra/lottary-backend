@@ -9,6 +9,7 @@ affected by dyno restarts or cold boots.
 """
 
 import logging
+from app.services.db import delete_old_draws
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,6 +39,7 @@ def main():
     highest draw number we already have.  If the table is empty for a
     lottery, `FALLBACK_DRAW_NO` is used so we don't start at zero.
     """
+    delete_old_draws()
 
     for lottery_name, fallback_draw in LOTTERIES:
         max_db = get_max_draw_no(lottery_name)
