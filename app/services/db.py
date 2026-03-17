@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, 
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
+from sqlmodel import Session
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -35,6 +36,11 @@ jaya_draws = Table(
 def init_db():
     """Create the tables defined in metadata if they don't exist."""
     metadata.create_all(engine)
+
+
+def get_session():
+    """Dependency generator for SQLModel sessions."""
+    return Session(engine)
 
 
 def insert_draw(draw_data: dict):
