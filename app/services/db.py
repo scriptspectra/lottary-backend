@@ -12,10 +12,10 @@ from sqlmodel import Session
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-# Database connection 
-connection_uri = os.getenv("CONNECTION_URI")
+# Database connection
+connection_uri = os.getenv("CONNECTION_URI") or os.getenv("DATABASE_URL")
 if not connection_uri:
-    raise RuntimeError("CONNECTION_URI environment variable not set")
+    raise RuntimeError("CONNECTION_URI or DATABASE_URL environment variable not set")
 
 engine = create_engine(connection_uri)
 metadata = MetaData()
