@@ -8,4 +8,4 @@ sqlalchemy
 apscheduler
 python-dotenv
 gunicorn
-firebase-admin
+# firebase-admin
