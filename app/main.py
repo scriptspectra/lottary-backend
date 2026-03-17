@@ -20,7 +20,7 @@ async def lifespan(application: FastAPI):
 
     start_scheduler()
     logger.info("Scheduler started")
-
+    
     yield  # app is running
 
     # Shutdown
@@ -32,8 +32,10 @@ app = FastAPI(title="NLB Lottery API", lifespan=lifespan)
 
 # ── Routers ──
 from app.routers.mahajana_sampatha import router as mahajana_router  # noqa: E402
+from app.routers.webhook import router as webhook_router             # noqa: E402
 
 app.include_router(mahajana_router)
+app.include_router(webhook_router)
 
 
 @app.get("/", tags=["health"])
